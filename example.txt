@@ -1,0 +1,103 @@
+######################################################
+# one host task
+######################################################
+# 
+# wait
+# ====
+# wait for a handler to completed, ie, rc=0
+# loops the handler every 60 seconds
+#
+# command
+# =======
+# Executes any handler once
+#
+# iferror
+# ============
+# Executes a handler if previous rc from command was NOT 0
+#
+# Handlers:
+# 
+# op5: checks the status of the desired check
+# ===========================================
+# Required arguments: 
+#	check: The name of the check in op5
+#	state: Desired state of the check, i.e OK,WARNING,CRITICAL
+# Optional arguments: 
+#	host: the hostname in op5 of the host to check, defaults to the name of this file
+#
+#
+# ansible: Executes a playbook
+# ============================
+# Required arguments:
+#	playbook: which playbook to play
+# Optional arguments:
+#	host: Which host to run tha playbook on, default to the name of this file
+#	tag: include a tag i.e -t <tag>
+#	  
+#
+# sleep: sleeps a while
+# =====================
+# Required arguments:
+#	timer: how long to sleep (in seconds) i.e sleep(x)
+#
+#
+# task: run another task (like this one)
+# ======================================
+# Required arguments:
+#	host: which host task to run
+#
+#
+# exit: exit this task
+# ======================================
+# Optional arguments:
+#	rc: exit with return code, defaults to latest rc
+#	msg: echo a msg to the screen befoore exiting.
+#
+######################################################
+
+
+# Check that the servers is running 
+command handler=op5,check=hostcheck,state=OK
+
+# Check if handler executed ok, exit if not...
+iferror handler=exit,rc=1,msg="Host is not up, exiting task"
+
+# Check that the server needs patching
+wait handler=op5,check=patchstatus,state=CRITICAL
+
+# Check dependent database server is alive
+wait handler=op5,host=dbserver,check=hostcheck,state=OK
+
+# Execute db shutdown on dependent server
+command handler=ansible,host=dbserver,playbook=stopdb
+
+# Wait for db to be shutdown
+wait handler=op5,host=dbserver,check=mariadb,state=CRITICAL
+
+# Execute update
+command handler=ansible,playbook=autopatch
+
+# Check if handler executed ok, retry if not
+iferror handler=ansible,playbook=autopatch
+
+# Check if handler executed ok, exit if not...
+iferror handler=exit,msg="Error with autopatch"
+
+# Wait for update to be implemented
+wait handler=op5,check=patchstatus,state=OK
+
+# While database is down run task for another host
+command handler=task,name=webserver
+
+# Wait some time before starting database
+wait handler=sleep,timer=60
+
+# Start the databse
+command handler=ansible,host=dbserver,playbook=startdb
+
+# Wait for db to be started
+wait handler=op5,host=dbserver,check=mariadb,state=OK
+
+command handler=exit,rc=0,msg="End of story"
+
+# This should never happend
