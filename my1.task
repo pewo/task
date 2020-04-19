@@ -1,0 +1,16 @@
+10	command handler=op5;check=hostcheck;state=OK
+20	iferror goto=10;sleep=1
+30	wait handler=op5;check=patchstatus;state=CRITICAL
+40	wait handler=op5;host=dbserver;check=hostcheck;state=OK
+50	command handler=ansible;host=dbserver;playbook=stopdb
+55	iferror handler=exit;msg=Could not stop database
+#60	wait handler=op5;host=dbserver;check=mariadb;state=CRITICAL
+#70	command handler=ansible;playbook=autopatch
+#80	iferror handler=ansible;playbook=autopatch
+#90	iferror handler=exit;msg=Error with autopatch
+#100	wait handler=op5;check=patchstatus;state=OK
+#110	command handler=task;name=webserver
+#120	wait handler=sleep;timer=60
+#130	command handler=ansible;host=dbserver;playbook=startdb
+#140	wait handler=op5;host=dbserver;check=mariadb;state=OK
+#150	command handler=exit;rc=0;msg=End of story

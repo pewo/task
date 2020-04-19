@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "Hello from $0 and my friends $*"
+exit $(( $RANDOM % 5 ))
