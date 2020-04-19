@@ -84,6 +84,7 @@ sub _accessor() {
 sub _ifs() { return(shift->_accessor("ifs",shift)) };
 sub _program() { return(shift->_accessor("program",shift)) };
 sub _task() { return(shift->_accessor("task",shift)) };
+sub _taskfile() { return(shift->_accessor("taskfile",shift)) };
 sub _parent() { return(shift->_accessor("parent",shift)) };
 sub _child() { return(shift->_accessor("child",shift)) };
 	
@@ -106,9 +107,9 @@ sub new {
 		$self->set($key,$val);
 	}
 
-	my($task) = $self->_task();
-	unless ( defined($task) ) {
-		croak "new need task argument";
+	my($taskfile) = $self->_taskfile();
+	unless ( defined($taskfile) ) {
+		croak "new need 'taskfile' parameter";
 	}
 	return($self->init());
 }
@@ -141,12 +142,12 @@ sub debug() {
 sub init() {
 	my($self) = shift;
 	my(%args) = @_;
-	my($task) = $self->_task();
-	unless ( defined($task) ) {
+	my($taskfile) = $self->_taskfile();
+	unless ( defined($taskfile) ) {
 		croak "task is not defined\n";
 	}
-	unless ( open(TASK,"<",$task) ) {
-		die "Reading $task: $!\n";
+	unless ( open(TASK,"<",$taskfile) ) {
+		die "Reading $taskfile $!\n";
 	}
 	my(%line);
 	foreach ( <TASK> ) {
@@ -329,10 +330,10 @@ sub task() {
 	my(%args) = @_;
 
 	$self->debug(1,"Doing da task handler");
-	my($task) = $args{task};
-	my($newtask) = new Task ( task => $task, debug => $self->get("debug"), parent => $self->_task() );
+	my($taskfile) = $args{taskfile};
+	my($newtask) = new Task ( taskfile => $taskfile, debug => $self->get("debug"), parent => $self->_taskfile() );
 	return(undef) unless ( $newtask );
-	$self->debug(1,"Starting sub task ( $task )");
+	$self->debug(1,"Starting sub task ( $taskfile )");
 	return( $newtask->runtask() );
 }
 ##############################################################################
@@ -422,6 +423,7 @@ sub runtask() {
 	my($rc) = 0;
 	my(%retry) = ();
 	print $self->banner_task();
+	my($taskfile) = $self->_taskfile();
 	while ( $line ) {
 		($line,$function,$args) = $self->nextline($line);
 		next unless ( defined($line) );
@@ -431,7 +433,7 @@ sub runtask() {
 		next unless ( $args );
 		my(%args) = $self->splitter($args);
 		print "\n=== Starting ========================================\n";
-		print "pid: $$, retry: $retry{$line}, line: $line, function: $function, args: $args\n";
+		print "taskfile: $taskfile, pid: $$, retry: $retry{$line}, line: $line, function: $function, args: $args\n";
 
 		$self->extra(%args);
 

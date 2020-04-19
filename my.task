@@ -1,4 +1,4 @@
-10	command handler=task;task=my1.task
+10	command handler=task;taskfile=my1.task
 15	iferror handler=exit;msg=Could not complete my1.task
-20	command handler=task;task=my2.task
+20	command handler=task;taskfile=my2.task
 25	iferror handler=exit;msg=Could not complete my2.task

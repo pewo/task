@@ -27,7 +27,7 @@ GetOptions(
 unless ( defined($file) ) {
 	die "Usage: $0 --task=<task file> --debug=<debuglevel>\n";
 }
-my($task) = new Task( task => $file, debug => $debug );
+my($task) = new Task( taskfile => $file, debug => $debug );
 
 $task->runtask();
 __END__
